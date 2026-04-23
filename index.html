@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoF Weekly Marketing Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface2: #F0EEE9;
+  --border: #E2DED6;
+  --border2: #CCC9C0;
+  --text: #1A1916;
+  --text2: #6B6860;
+  --text3: #9B9890;
+  --green: #2D7D4F;
+  --green-bg: #E8F4ED;
+  --red: #C0392B;
+  --red-bg: #FCEAE8;
+  --blue: #2962A8;
+  --accent: #C8652A;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── LOADING SCREEN ── */
+#loader {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; gap: 20px;
+}
+.loader-logo { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); }
+.loader-bar { width: 200px; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.loader-fill { height: 100%; background: var(--accent); border-radius: 2px; animation: loadfill 3s ease-in-out forwards; }
+.loader-msg { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+@keyframes loadfill { 0%{width:0%} 30%{width:40%} 70%{width:75%} 100%{width:95%} }
+
+/* ── LAYOUT ── */
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+
+/* ── HEADER ── */
+header {
+  padding: 32px 0 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+  display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.hdr-left { display: flex; flex-direction: column; gap: 6px; }
+.hdr-logo { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--text3); }
+.hdr-title { font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
+.hdr-period { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+.hdr-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--text2);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 14px;
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── SECTION TABS ── */
+.tabs {
+  display: flex; gap: 2px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px; width: fit-content; margin-bottom: 24px;
+}
+.tab {
+  font-family: var(--font); font-size: 13px; font-weight: 400;
+  padding: 7px 18px; border-radius: 6px; cursor: pointer;
+  color: var(--text2); border: none; background: transparent;
+  transition: all .15s;
+}
+.tab.on { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.tab:hover:not(.on) { color: var(--text); }
+
+/* ── PANES ── */
+.pane { display: none; }
+.pane.on { display: block; }
+
+/* ── SECTION HEADER ── */
+.sec-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sec-title { font-size: 15px; font-weight: 500; }
+.sec-badge {
+  font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--surface2); color: var(--text3); border: 1px solid var(--border);
+}
+
+/* ── METRIC CARDS ── */
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+.metric-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 16px;
+}
+.metric-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+.metric-value { font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1; margin-bottom: 8px; }
+.metric-deltas { display: flex; gap: 6px; flex-wrap: wrap; }
+.delta {
+  font-size: 10px; font-weight: 500; font-family: var(--mono);
+  padding: 2px 6px; border-radius: 3px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.delta-up { background: var(--green-bg); color: var(--green); }
+.delta-down { background: var(--red-bg); color: var(--red); }
+.delta-neu { background: var(--surface2); color: var(--text3); }
+.delta-label { font-size: 9px; color: var(--text3); font-family: var(--mono); }
+
+/* ── CHARTS ── */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+}
+.chart-label { font-size: 11px; color: var(--text3); margin-bottom: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+.chart-wrap { position: relative; height: 180px; }
+
+/* ── TABLES ── */
+.tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+thead th {
+  font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--text3); padding: 10px 14px; text-align: right;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+thead th:first-child { text-align: left; }
+tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); text-align: right; color: var(--text); }
+tbody td:first-child { text-align: left; font-weight: 500; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--bg); }
+
+/* ── PILLS ── */
+.pill { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+.state-VIC { background: #EBF2FB; color: #1A5FA8; }
+.state-NSW { background: #E8F4ED; color: #1E6B3C; }
+.state-SA  { background: #FDF0E8; color: #9E4A1A; }
+.state-QLD { background: #FEF7E0; color: #8B6000; }
+.state-ACT { background: #F0EDFB; color: #5B3FA8; }
+
+/* ── SUBTABS ── */
+.subtabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.stab {
+  font-family: var(--font); font-size: 12px; padding: 5px 12px;
+  border-radius: 5px; cursor: pointer; border: 1px solid var(--border);
+  background: transparent; color: var(--text2); transition: all .12s;
+}
+.stab.on { background: var(--surface); color: var(--text); font-weight: 500; border-color: var(--border2); }
+
+/* ── NOTE BANNER ── */
+.note {
+  font-size: 11px; color: var(--text2); padding: 8px 12px;
+  background: var(--surface2); border-radius: 6px; border-left: 3px solid var(--border2);
+  margin-bottom: 16px; font-family: var(--mono);
+}
+
+/* ── DONUT WRAPPER ── */
+.donut-wrap { position: relative; height: 180px; }
+
+/* ── PRINT STYLES ── */
+@media print {
+  #loader { display: none !important; }
+  .tabs, .subtabs, .hdr-status { display: none !important; }
+  .pane { display: block !important; page-break-inside: avoid; }
+  .pane + .pane { page-break-before: always; }
+  body { background: white; }
+  .metric-card, .chart-card, .tbl-wrap { border: 1px solid #ddd; box-shadow: none; }
+  header { padding: 16px 0; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loader">
+  <div class="loader-logo">Focus on Furniture</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-msg" id="loader-msg">Connecting to data sources…</div>
+</div>
+
+<div class="wrap" id="app" style="opacity:0;transition:opacity .4s">
+
+  <header>
+    <div class="hdr-left">
+      <div class="hdr-logo">Focus on Furniture · Weekly Marketing Report</div>
+      <div class="hdr-title" id="hdr-title">Loading…</div>
+      <div class="hdr-period" id="hdr-period"></div>
+    </div>
+    <div class="hdr-status">
+      <div class="status-dot"></div>
+      <span id="hdr-status-txt">Fetching live data…</span>
+    </div>
+  </header>
+
+  <div id="global-err"></div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('digital')">Digital</button>
+    <button class="tab" onclick="showTab('store')">Store</button>
+    <button class="tab" onclick="showTab('customer')">Customer</button>
+    <button class="tab" onclick="showTab('brand')">Brand health</button>
+  </div>
+
+  <!-- DIGITAL -->
+  <div class="pane on" id="pane-digital">
+    <div class="sec-hdr">
+      <span class="sec-title">Digital performance</span>
+      <span class="sec-badge">GA4 · all channels</span>
+    </div>
+    <div class="metric-grid" id="dig-metrics"></div>
+    <div class="chart-grid">
+      <div class="chart-card"><div class="chart-label">Sessions by channel</div><div class="chart-wrap"><canvas id="ch-sessions"></canvas></div></div>
+      <div class="chart-card"><div class="chart-label">Revenue by channel</div><div class="chart-wrap"><canvas id="ch-revenue"></canvas></div></div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">By channel</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Channel</th><th>Sessions</th><th>Orders</th><th>Conv. rate</th><th>Revenue</th></tr></thead><tbody id="dig-tbody"></tbody></table></div>
+  </div>
+
+  <!-- STORE -->
+  <div class="pane" id="pane-store">
+    <div class="sec-hdr">
+      <span class="sec-title">Store activity</span>
+      <span class="sec-badge">Retail Traffic Tracker · 27 stores</span>
+    </div>
+    <div class="note" id="store-note"></div>
+    <div class="metric-grid" id="store-metrics"></div>
+    <div class="subtabs">
+      <button class="stab on" onclick="switchStore('region')">By region</button>
+      <button class="stab" onclick="switchStore('store')">By store</button>
+    </div>
+    <div id="store-region">
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-label">Revenue by region</div><div class="chart-wrap"><canvas id="reg-rev"></canvas></div></div>
+        <div class="chart-card"><div class="chart-label">Door count by region</div><div class="chart-wrap"><canvas id="reg-doors"></canvas></div></div>
+      </div>
+      <div class="tbl-wrap"><table><thead><tr><th>Region</th><th>Stores</th><th>Doors</th><th>Conv.</th><th>Sales qty</th><th>Revenue</th><th>WoW</th><th>YoY</th></tr></thead><tbody id="reg-tbody"></tbody></table></div>
+    </div>
+    <div id="store-store" style="display:none">
+      <div class="tbl-wrap"><table><thead><tr><th>Store</th><th>State</th><th>Region</th><th>Doors</th><th>Conv.</th><th>Sales qty</th><th>Revenue</th><th>WoW</th><th>YoY</th></tr></thead><tbody id="store-tbody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER -->
+  <div class="pane" id="pane-customer">
+    <div class="sec-hdr">
+      <span class="sec-title">Customer & email activity</span>
+      <span class="sec-badge">Mailchimp</span>
+    </div>
+    <div class="metric-grid" id="cust-metrics"></div>
+    <div class="sec-hdr" style="margin-top:8px"><span class="sec-title">Campaign breakdown</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Campaign</th><th>Sent</th><th>Open rate</th><th>Click rate</th><th>Unsubscribes</th></tr></thead><tbody id="cust-tbody"></tbody></table></div>
+  </div>
+
+  <!-- BRAND -->
+  <div class="pane" id="pane-brand">
+    <div class="sec-hdr">
+      <span class="sec-title">Brand health — organic search</span>
+      <span class="sec-badge">Search Console</span>
+    </div>
+    <div class="metric-grid" id="brand-metrics"></div>
+    <div class="chart-grid">
+      <div class="chart-card"><div class="chart-label">Branded vs non-branded impressions</div><div class="donut-wrap"><canvas id="br-donut"></canvas></div></div>
+      <div class="chart-card"><div class="chart-label">This week vs prior year</div><div class="chart-wrap"><canvas id="br-bar"></canvas></div></div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ════════════════════════════════════════════
+   STORE DATA — embedded from Retail_Traffic_Tracker.xlsx
+   Update this block each week by uploading a new tracker to Claude
+   ════════════════════════════════════════════ */
+const STORE_DATA = {"meta":{"curr_start":"2026-04-13","curr_end":"2026-04-19","pw_start":"2026-03-30","pw_end":"2026-04-05","py_start":"2025-04-14","py_end":"2025-04-20","pw_note":"W/E 5 Apr — 6–12 Apr not yet in file"},"curr":[{"no":2,"name":"Shepparton","state":"VIC","region":"Vic Regional","doors":1012,"qty":31,"amt":41847.0},{"no":3,"name":"Albury","state":"NSW","region":"Vic Regional","doors":1287,"qty":31,"amt":46816.0},{"no":4,"name":"Ballarat","state":"VIC","region":"Vic Regional","doors":1127,"qty":39,"amt":64360.0},{"no":5,"name":"Bendigo","state":"VIC","region":"Vic Regional","doors":1286,"qty":36,"amt":30747.0},{"no":10,"name":"Nunawading","state":"VIC","region":"Melbourne","doors":3221,"qty":76,"amt":105450.0},{"no":11,"name":"Kotara","state":"NSW","region":"NSW Regional","doors":1663,"qty":50,"amt":80854.0},{"no":15,"name":"Prospect","state":"VIC","region":"Sydney","doors":870,"qty":13,"amt":24468.0},{"no":16,"name":"Tuggerah","state":"NSW","region":"NSW Regional","doors":1050,"qty":25,"amt":41237.0},{"no":21,"name":"Essendon","state":"VIC","region":"Melbourne","doors":2700,"qty":42,"amt":66902.0},{"no":22,"name":"Pakenham","state":"VIC","region":"Melbourne","doors":973,"qty":29,"amt":46212.0},{"no":23,"name":"Frankston","state":"VIC","region":"Melbourne","doors":1837,"qty":71,"amt":106249.0},{"no":24,"name":"Geelong","state":"VIC","region":"Vic Regional","doors":2154,"qty":43,"amt":88373.0},{"no":26,"name":"Preston","state":"VIC","region":"Melbourne","doors":1472,"qty":14,"amt":15354.0},{"no":29,"name":"Fyshwick/Canberra","state":"ACT","region":"Canberra","doors":2678,"qty":48,"amt":57213.0},{"no":30,"name":"Dandenong","state":"VIC","region":"Melbourne","doors":1511,"qty":51,"amt":72218.0},{"no":31,"name":"Springvale","state":"VIC","region":"Melbourne","doors":2499,"qty":50,"amt":94245.0},{"no":32,"name":"Hoppers Crossing","state":"VIC","region":"Melbourne","doors":1768,"qty":42,"amt":67574.0},{"no":33,"name":"Wagga Wagga","state":"NSW","region":"NSW Regional","doors":949,"qty":36,"amt":55450.0},{"no":34,"name":"South Wharf","state":"VIC","region":"Melbourne","doors":2111,"qty":59,"amt":71277.0},{"no":35,"name":"Moorabbin","state":"VIC","region":"Melbourne","doors":1351,"qty":27,"amt":50600.0},{"no":42,"name":"Maribyrnong","state":"VIC","region":"Melbourne","doors":1568,"qty":33,"amt":45308.0},{"no":52,"name":"Gepps Cross","state":"SA","region":"Adelaide","doors":2249,"qty":51,"amt":81329.1},{"no":58,"name":"Mile End","state":"SA","region":"Adelaide","doors":2287,"qty":71,"amt":95465.0},{"no":66,"name":"Bankstown","state":"NSW","region":"Sydney","doors":1306,"qty":29,"amt":46571.0},{"no":81,"name":"MacGregor","state":"QLD","region":"Brisbane","doors":1618,"qty":20,"amt":34208.0},{"no":82,"name":"Helensvale","state":"QLD","region":"Gold Coast","doors":1061,"qty":30,"amt":44246.0},{"no":83,"name":"Robina","state":"QLD","region":"Gold Coast","doors":1016,"qty":22,"amt":34981.0}],"pw":[{"no":2,"name":"Shepparton","state":"VIC","region":"Vic Regional","doors":675,"qty":32,"amt":48546.0},{"no":3,"name":"Albury","state":"NSW","region":"Vic Regional","doors":814,"qty":40,"amt":56481.0},{"no":4,"name":"Ballarat","state":"VIC","region":"Vic Regional","doors":892,"qty":26,"amt":41821.0},{"no":5,"name":"Bendigo","state":"VIC","region":"Vic Regional","doors":1016,"qty":14,"amt":14580.0},{"no":10,"name":"Nunawading","state":"VIC","region":"Melbourne","doors":2441,"qty":60,"amt":89593.0},{"no":11,"name":"Kotara","state":"NSW","region":"NSW Regional","doors":1014,"qty":33,"amt":37565.0},{"no":15,"name":"Prospect","state":"VIC","region":"Sydney","doors":546,"qty":15,"amt":25098.0},{"no":16,"name":"Tuggerah","state":"NSW","region":"NSW Regional","doors":731,"qty":17,"amt":17071.0},{"no":21,"name":"Essendon","state":"VIC","region":"Melbourne","doors":2157,"qty":40,"amt":70522.0},{"no":22,"name":"Pakenham","state":"VIC","region":"Melbourne","doors":714,"qty":21,"amt":30328.0},{"no":23,"name":"Frankston","state":"VIC","region":"Melbourne","doors":1388,"qty":45,"amt":87212.0},{"no":24,"name":"Geelong","state":"VIC","region":"Vic Regional","doors":1196,"qty":43,"amt":66462.0},{"no":26,"name":"Preston","state":"VIC","region":"Melbourne","doors":1295,"qty":51,"amt":83250.0},{"no":29,"name":"Fyshwick/Canberra","state":"ACT","region":"Canberra","doors":2160,"qty":51,"amt":102889.0},{"no":30,"name":"Dandenong","state":"VIC","region":"Melbourne","doors":1163,"qty":49,"amt":76638.0},{"no":31,"name":"Springvale","state":"VIC","region":"Melbourne","doors":1882,"qty":60,"amt":71116.0},{"no":32,"name":"Hoppers Crossing","state":"VIC","region":"Melbourne","doors":1331,"qty":38,"amt":51583.0},{"no":33,"name":"Wagga Wagga","state":"NSW","region":"NSW Regional","doors":652,"qty":30,"amt":56290.0},{"no":34,"name":"South Wharf","state":"VIC","region":"Melbourne","doors":1373,"qty":43,"amt":63554.0},{"no":35,"name":"Moorabbin","state":"VIC","region":"Melbourne","doors":918,"qty":18,"amt":19437.0},{"no":42,"name":"Maribyrnong","state":"VIC","region":"Melbourne","doors":1079,"qty":30,"amt":40999.0},{"no":52,"name":"Gepps Cross","state":"SA","region":"Adelaide","doors":2295,"qty":60,"amt":94427.0},{"no":58,"name":"Mile End","state":"SA","region":"Adelaide","doors":1325,"qty":62,"amt":112015.0},{"no":66,"name":"Bankstown","state":"NSW","region":"Sydney","doors":756,"qty":28,"amt":57605.0},{"no":81,"name":"MacGregor","state":"QLD","region":"Brisbane","doors":1266,"qty":30,"amt":34064.0},{"no":82,"name":"Helensvale","state":"QLD","region":"Gold Coast","doors":820,"qty":28,"amt":62801.0},{"no":83,"name":"Robina","state":"QLD","region":"Gold Coast","doors":853,"qty":31,"amt":48620.0}],"py":[{"no":2,"name":"Shepparton","state":"VIC","region":"Vic Regional","doors":696,"qty":27,"amt":41600.0},{"no":3,"name":"Albury","state":"NSW","region":"Vic Regional","doors":1040,"qty":30,"amt":31841.0},{"no":4,"name":"Ballarat","state":"VIC","region":"Vic Regional","doors":975,"qty":43,"amt":73719.0},{"no":5,"name":"Bendigo","state":"VIC","region":"Vic Regional","doors":1181,"qty":45,"amt":66067.0},{"no":10,"name":"Nunawading","state":"VIC","region":"Melbourne","doors":3082,"qty":81,"amt":144662.0},{"no":11,"name":"Kotara","state":"NSW","region":"NSW Regional","doors":1359,"qty":49,"amt":83389.0},{"no":15,"name":"Prospect","state":"VIC","region":"Sydney","doors":758,"qty":7,"amt":27766.0},{"no":16,"name":"Tuggerah","state":"NSW","region":"NSW Regional","doors":0,"qty":0,"amt":0.0},{"no":21,"name":"Essendon","state":"VIC","region":"Melbourne","doors":2742,"qty":57,"amt":95770.0},{"no":22,"name":"Pakenham","state":"VIC","region":"Melbourne","doors":820,"qty":30,"amt":61901.0},{"no":23,"name":"Frankston","state":"VIC","region":"Melbourne","doors":2147,"qty":64,"amt":95449.0},{"no":24,"name":"Geelong","state":"VIC","region":"Vic Regional","doors":1355,"qty":57,"amt":105163.0},{"no":26,"name":"Preston","state":"VIC","region":"Melbourne","doors":1517,"qty":33,"amt":54587.0},{"no":29,"name":"Fyshwick/Canberra","state":"ACT","region":"Canberra","doors":2460,"qty":44,"amt":74210.0},{"no":30,"name":"Dandenong","state":"VIC","region":"Melbourne","doors":1406,"qty":50,"amt":95071.0},{"no":31,"name":"Springvale","state":"VIC","region":"Melbourne","doors":2515,"qty":56,"amt":95441.0},{"no":32,"name":"Hoppers Crossing","state":"VIC","region":"Melbourne","doors":1885,"qty":52,"amt":88583.0},{"no":33,"name":"Wagga Wagga","state":"NSW","region":"NSW Regional","doors":730,"qty":30,"amt":54446.0},{"no":34,"name":"South Wharf","state":"VIC","region":"Melbourne","doors":1828,"qty":41,"amt":82719.0},{"no":35,"name":"Moorabbin","state":"VIC","region":"Melbourne","doors":867,"qty":16,"amt":26415.0},{"no":42,"name":"Maribyrnong","state":"VIC","region":"Melbourne","doors":1306,"qty":33,"amt":58857.0},{"no":52,"name":"Gepps Cross","state":"SA","region":"Adelaide","doors":2466,"qty":78,"amt":147843.0},{"no":58,"name":"Mile End","state":"SA","region":"Adelaide","doors":0,"qty":1,"amt":279.0},{"no":66,"name":"Bankstown","state":"NSW","region":"Sydney","doors":1122,"qty":35,"amt":57806.0},{"no":81,"name":"MacGregor","state":"QLD","region":"Brisbane","doors":1566,"qty":38,"amt":82297.0},{"no":82,"name":"Helensvale","state":"QLD","region":"Gold Coast","doors":1043,"qty":30,"amt":64558.0},{"no":83,"name":"Robina","state":"QLD","region":"Gold Coast","doors":1509,"qty":28,"amt":47446.0}]};
+
+/* ════════════════════════════════════════════
+   CONSTANTS
+   ════════════════════════════════════════════ */
+const CH_COLS = {"Organic Search":"#2D7D4F","Paid Search":"#2962A8","Direct":"#6B6860","Cross-network":"#6B42A8","Organic Social":"#A82964","Paid Social":"#A85A2D","Referral":"#8B6000","Organic Shopping":"#4A7A1A","Unassigned":"#9B9890","Display":"#2980A8"};
+const REG_COLS = {"Melbourne":"#2962A8","Vic Regional":"#5B8ED4","NSW Regional":"#2D7D4F","Sydney":"#4DB87A","Adelaide":"#C8652A","Gold Coast":"#C8A02A","Brisbane":"#D4822A","Canberra":"#6B42A8"};
+const charts = {};
+
+/* ════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════ */
+const fN = n => Math.round(n).toLocaleString('en-AU');
+const fR = n => n >= 1e6 ? '$' + (n/1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n/1e3).toFixed(0) + 'k' : '$' + Math.round(n).toLocaleString('en-AU');
+const fP = n => n.toFixed(2) + '%';
+const fD = d => d.toISOString().split('T')[0];
+
+function dTag(c, p, inv = false) {
+  if (!p || p === 0) return '<span class="delta delta-neu">n/a</span>';
+  const pct = (c - p) / p * 100;
+  const good = inv ? pct < 0 : pct > 0;
+  const cls = Math.abs(pct) < 0.3 ? 'delta-neu' : (good ? 'delta-up' : 'delta-down');
+  const arrow = pct > 0 ? '↑' : '↓';
+  return `<span class="delta ${cls}">${arrow} ${Math.abs(pct).toFixed(1)}%</span>`;
+}
+
+function metricCard(label, val, currW, prevW, currY, prevY, inv = false) {
+  return `<div class="metric-card">
+    <div class="metric-label">${label}</div>
+    <div class="metric-value">${val}</div>
+    <div class="metric-deltas">
+      ${dTag(currW, prevW, inv)} <span class="delta-label">WoW</span>
+      ${dTag(currY, prevY, inv)} <span class="delta-label">YoY</span>
+    </div>
+  </div>`;
+}
+
+function mkChart(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+
+/* ════════════════════════════════════════════
+   DATE CALCULATION — auto-detect last full retail week
+   ════════════════════════════════════════════ */
+function getWeekDates() {
+  const now = new Date();
+  // Last completed Sunday
+  const day = now.getDay();
+  const sun = new Date(now);
+  sun.setDate(now.getDate() - (day === 0 ? 7 : day));
+  sun.setHours(0,0,0,0);
+  const mon = new Date(sun); mon.setDate(mon.getDate() - 6);
+  // Prior week
+  const pwSun = new Date(sun); pwSun.setDate(pwSun.getDate() - 7);
+  const pwMon = new Date(pwSun); pwMon.setDate(pwMon.getDate() - 6);
+  // Prior year
+  const pySun = new Date(sun); pySun.setFullYear(pySun.getFullYear() - 1);
+  const pyMon = new Date(pySun); pyMon.setDate(pyMon.getDate() - 6);
+  return { mon, sun, pwMon, pwSun, pyMon, pySun };
+}
+
+function shortDate(d) {
+  return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' });
+}
+
+/* ════════════════════════════════════════════
+   TAB SWITCHING
+   ════════════════════════════════════════════ */
+function showTab(t) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('pane-' + t).classList.add('on');
+  document.querySelectorAll('.tab').forEach((b, i) => {
+    if (['digital','store','customer','brand'][i] === t) b.classList.add('on');
+  });
+}
+
+function switchStore(v) {
+  document.getElementById('store-region').style.display = v === 'region' ? 'block' : 'none';
+  document.getElementById('store-store').style.display = v === 'store' ? 'block' : 'none';
+  document.querySelectorAll('.stab').forEach((b, i) => b.classList.toggle('on', ['region','store'][i] === v));
+}
+
+/* ════════════════════════════════════════════
+   WINDSOR API
+   ════════════════════════════════════════════ */
+async function fetchWindsor(connector, fields, dateFrom, dateTo, account) {
+  const prompt = `Use Windsor.ai get_data: connector="${connector}", account="${account}", date_from="${dateFrom}", date_to="${dateTo}", fields=${JSON.stringify(fields)}. Return data as JSON object with key "rows" containing the array. No markdown.`;
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      mcp_servers: [{ type: 'url', url: 'https://mcp.windsor.ai', name: 'windsor' }],
+      system: 'You are a data retrieval agent. Call Windsor.ai MCP tools as instructed. Return ONLY a valid JSON object with key "rows". No markdown, no explanation.',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const d = await resp.json();
+  for (const b of (d.content || [])) {
+    if (b.type === 'mcp_tool_result') { try { return JSON.parse(b.content[0].text); } catch {} }
+  }
+  for (const b of (d.content || [])) {
+    if (b.type === 'text') { try { return JSON.parse(b.text.replace(/```json|```/g,'').trim()); } catch {} }
+  }
+  return { rows: [] };
+}
+
+async function fetchAll(connector, fields, dates, account) {
+  const { mon, sun, pwMon, pwSun, pyMon, pySun } = dates;
+  const [curr, pw, py] = await Promise.all([
+    fetchWindsor(connector, fields, fD(mon), fD(sun), account),
+    fetchWindsor(connector, fields, fD(pwMon), fD(pwSun), account),
+    fetchWindsor(connector, fields, fD(pyMon), fD(pySun), account),
+  ]);
+  return [curr.rows || curr.result || [], pw.rows || pw.result || [], py.rows || py.result || []];
+}
+
+/* ════════════════════════════════════════════
+   RENDER — DIGITAL
+   ════════════════════════════════════════════ */
+function aggGA4(rows) {
+  const m = {};
+  for (const r of rows) {
+    const ch = r.session_default_channel_group || 'Other';
+    if (!m[ch]) m[ch] = { s: 0, t: 0, rev: 0 };
+    m[ch].s += r.sessions || 0;
+    m[ch].t += r.transactions || 0;
+    m[ch].rev += r.purchase_revenue || 0;
+  }
+  return m;
+}
+function aggGA4Tot(rows) {
+  return rows.reduce((a, r) => ({ s: a.s+(r.sessions||0), t: a.t+(r.transactions||0), rev: a.rev+(r.purchase_revenue||0) }), { s:0, t:0, rev:0 });
+}
+
+function renderDigital(curr, pw, py) {
+  const bC=aggGA4(curr), bP=aggGA4(pw), bY=aggGA4(py);
+  const tC=aggGA4Tot(curr), tP=aggGA4Tot(pw), tY=aggGA4Tot(py);
+  const cvC=tC.s?tC.t/tC.s*100:0, cvP=tP.s?tP.t/tP.s*100:0, cvY=tY.s?tY.t/tY.s*100:0;
+
+  document.getElementById('dig-metrics').innerHTML =
+    metricCard('Sessions', fN(tC.s), tC.s, tP.s, tC.s, tY.s) +
+    metricCard('Transactions', fN(tC.t), tC.t, tP.t, tC.t, tY.t) +
+    metricCard('Revenue', fR(tC.rev), tC.rev, tP.rev, tC.rev, tY.rev) +
+    metricCard('Conv. rate', fP(cvC), cvC, cvP, cvC, cvY);
+
+  const chs = Object.keys(bC).sort((a,b) => bC[b].rev - bC[a].rev);
+  const top = chs.slice(0, 7);
+  const cols = top.map(c => CH_COLS[c] || '#888');
+
+  mkChart('ch-sessions', { type:'bar', data:{
+    labels: top,
+    datasets: [
+      { label:'This week', data:top.map(c=>bC[c].s), backgroundColor:cols.map(c=>c+'cc'), borderColor:cols, borderWidth:1 },
+      { label:'Prior year', data:top.map(c=>bY[c]?.s||0), backgroundColor:cols.map(c=>c+'33'), borderColor:cols, borderWidth:1 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:10},maxRotation:35}},y:{ticks:{font:{size:10}}}} }
+  });
+  mkChart('ch-revenue', { type:'bar', data:{
+    labels: top,
+    datasets: [
+      { label:'This week', data:top.map(c=>Math.round(bC[c].rev)), backgroundColor:cols.map(c=>c+'cc'), borderColor:cols, borderWidth:1 },
+      { label:'Prior year', data:top.map(c=>Math.round(bY[c]?.rev||0)), backgroundColor:cols.map(c=>c+'33'), borderColor:cols, borderWidth:1 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:10},maxRotation:35}},y:{ticks:{callback:v=>'$'+fN(v),font:{size:10}}}} }
+  });
+
+  let rows = '';
+  for (const ch of chs) {
+    const c=bC[ch], p=bP[ch]||{s:0,t:0,rev:0}, y=bY[ch]||{s:0,t:0,rev:0};
+    const cv = c.s ? c.t/c.s*100 : 0;
+    const col = CH_COLS[ch] || '#888';
+    rows += `<tr>
+      <td><span class="pill" style="background:${col}18;color:${col};border:1px solid ${col}30">${ch}</span></td>
+      <td>${fN(c.s)}<br><small style="color:#9B9890;font-size:10px">${dTag(c.s,p.s)} WoW &nbsp;${dTag(c.s,y.s)} YoY</small></td>
+      <td>${fN(c.t)}</td>
+      <td>${fP(cv)}</td>
+      <td>${fR(c.rev)}<br><small style="color:#9B9890;font-size:10px">${dTag(c.rev,p.rev)} WoW &nbsp;${dTag(c.rev,y.rev)} YoY</small></td>
+    </tr>`;
+  }
+  document.getElementById('dig-tbody').innerHTML = rows;
+}
+
+/* ════════════════════════════════════════════
+   RENDER — STORE
+   ════════════════════════════════════════════ */
+function renderStore() {
+  const C=STORE_DATA.curr, PW=STORE_DATA.pw, PY=STORE_DATA.py, M=STORE_DATA.meta;
+  const idx = (arr, no) => arr.find(x => x.no === no) || { doors:0, qty:0, amt:0 };
+  const tot = arr => arr.reduce((a,s) => ({ doors:a.doors+s.doors, qty:a.qty+s.qty, amt:a.amt+s.amt }), { doors:0, qty:0, amt:0 });
+  const tC=tot(C), tP=tot(PW), tY=tot(PY);
+  const cvC=tC.doors?tC.qty/tC.doors*100:0, cvP=tP.doors?tP.qty/tP.doors*100:0, cvY=tY.doors?tY.qty/tY.doors*100:0;
+
+  document.getElementById('store-note').textContent =
+    `W/E ${M.curr_end}  ·  Prior week: ${M.pw_start}–${M.pw_end} (${M.pw_note})  ·  Prior year: ${M.py_start}–${M.py_end}  ·  27 stores`;
+
+  document.getElementById('store-metrics').innerHTML =
+    metricCard('Door count', fN(tC.doors), tC.doors, tP.doors, tC.doors, tY.doors) +
+    metricCard('Sales qty', fN(tC.qty), tC.qty, tP.qty, tC.qty, tY.qty) +
+    metricCard('Revenue', fR(tC.amt), tC.amt, tP.amt, tC.amt, tY.amt) +
+    metricCard('Conv. rate', fP(cvC), cvC, cvP, cvC, cvY);
+
+  // Region aggregation
+  const rmap = {};
+  for (const s of C) {
+    const r = s.region;
+    if (!rmap[r]) rmap[r] = { stores:0, doors:0, qty:0, amt:0, pw_amt:0, py_amt:0 };
+    rmap[r].stores++; rmap[r].doors += s.doors; rmap[r].qty += s.qty; rmap[r].amt += s.amt;
+    rmap[r].pw_amt += idx(PW, s.no).amt;
+    rmap[r].py_amt += idx(PY, s.no).amt;
+  }
+  const regs = Object.entries(rmap).sort((a,b) => b[1].amt - a[1].amt);
+  const rLabels = regs.map(r => r[0]);
+  const rCols = rLabels.map(r => REG_COLS[r] || '#888');
+
+  mkChart('reg-rev', { type:'bar', data:{ labels:rLabels, datasets:[{ data:regs.map(r=>Math.round(r[1].amt)), backgroundColor:rCols.map(c=>c+'cc'), borderColor:rCols, borderWidth:1 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:10},maxRotation:35}},y:{ticks:{callback:v=>'$'+fN(v),font:{size:10}}}} }
+  });
+  mkChart('reg-doors', { type:'bar', data:{ labels:rLabels, datasets:[{ data:regs.map(r=>r[1].doors), backgroundColor:rCols.map(c=>c+'88'), borderColor:rCols, borderWidth:1 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:10},maxRotation:35}},y:{ticks:{font:{size:10}}}} }
+  });
+
+  let rb = '';
+  for (const [reg, m] of regs) {
+    const cv = m.doors ? m.qty/m.doors*100 : 0;
+    rb += `<tr><td>${reg}</td><td>${m.stores}</td><td>${fN(m.doors)}</td><td>${fP(cv)}</td><td>${fN(m.qty)}</td><td>${fR(m.amt)}</td><td>${dTag(m.amt,m.pw_amt)}</td><td>${dTag(m.amt,m.py_amt)}</td></tr>`;
+  }
+  document.getElementById('reg-tbody').innerHTML = rb;
+
+  let sb = '';
+  for (const s of C.slice().sort((a,b) => b.amt - a.amt)) {
+    const p=idx(PW,s.no), y=idx(PY,s.no);
+    const cv = s.doors ? s.qty/s.doors*100 : 0;
+    sb += `<tr><td>${s.name}</td><td><span class="pill state-${s.state}">${s.state}</span></td><td style="font-size:11px;color:#6B6860">${s.region}</td><td>${fN(s.doors)}</td><td>${fP(cv)}</td><td>${fN(s.qty)}</td><td>${fR(s.amt)}</td><td>${dTag(s.amt,p.amt)}</td><td>${dTag(s.amt,y.amt)}</td></tr>`;
+  }
+  document.getElementById('store-tbody').innerHTML = sb;
+}
+
+/* ════════════════════════════════════════════
+   RENDER — CUSTOMER
+   ════════════════════════════════════════════ */
+function renderCustomer(curr, pw, py) {
+  const agg = rows => {
+    let sent=0, opens=0, clicks=0, unsubs=0, camps=new Set();
+    for (const r of rows) { sent+=r.emails_sent||0; opens+=r.unique_opens||0; clicks+=r.unique_clicks||0; unsubs+=r.unsubscribe_count||0; if(r.campaign_title)camps.add(r.campaign_title); }
+    return { sent, opens, clicks, unsubs, camps:camps.size, or:sent?opens/sent:0, cr:sent?clicks/sent:0 };
+  };
+  const c=agg(curr), p=agg(pw), y=agg(py);
+
+  document.getElementById('cust-metrics').innerHTML =
+    metricCard('Emails sent', fN(c.sent), c.sent, p.sent, c.sent, y.sent) +
+    metricCard('Unique opens', fN(c.opens), c.opens, p.opens, c.opens, y.opens) +
+    metricCard('Open rate', (c.or*100).toFixed(1)+'%', c.or, p.or, c.or, y.or) +
+    metricCard('Click rate', (c.cr*100).toFixed(2)+'%', c.cr, p.cr, c.cr, y.cr) +
+    metricCard('Campaigns', String(c.camps), c.camps, p.camps, c.camps, y.camps) +
+    metricCard('Unsubscribes', fN(c.unsubs), c.unsubs, p.unsubs, c.unsubs, y.unsubs, true);
+
+  const campMap = {};
+  for (const r of curr) {
+    const k = r.campaign_title || '(no title)';
+    if (!campMap[k]) campMap[k] = { sent:0, opens:0, clicks:0, unsubs:0 };
+    campMap[k].sent += r.emails_sent||0; campMap[k].opens += r.unique_opens||0;
+    campMap[k].clicks += r.unique_clicks||0; campMap[k].unsubs += r.unsubscribe_count||0;
+  }
+  const rows = Object.entries(campMap).map(([t,m]) =>
+    `<tr><td>${t}</td><td>${fN(m.sent)}</td><td>${m.sent?(m.opens/m.sent*100).toFixed(1)+'%':'—'}</td><td>${m.sent?(m.clicks/m.sent*100).toFixed(2)+'%':'—'}</td><td>${m.unsubs}</td></tr>`
+  ).join('');
+  document.getElementById('cust-tbody').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:#9B9890;padding:20px">No campaigns found for this period</td></tr>';
+}
+
+/* ════════════════════════════════════════════
+   RENDER — BRAND
+   ════════════════════════════════════════════ */
+function renderBrand(curr, pw, py) {
+  const agg = rows => {
+    let bC=0, bI=0, nC=0, nI=0;
+    for (const r of rows) {
+      if (r.branded_vs_nonbranded === 'branded') { bC+=r.clicks||0; bI+=r.impressions||0; }
+      else { nC+=r.clicks||0; nI+=r.impressions||0; }
+    }
+    return { bC, bI, nC, nI, tC:bC+nC, tI:bI+nI };
+  };
+  const c=agg(curr), p=agg(pw), y=agg(py);
+  const bsh=c.tI?c.bI/c.tI*100:0, bshP=p.tI?p.bI/p.tI*100:0, bshY=y.tI?y.bI/y.tI*100:0;
+
+  document.getElementById('brand-metrics').innerHTML =
+    metricCard('Total impressions', fN(c.tI), c.tI, p.tI, c.tI, y.tI) +
+    metricCard('Total clicks', fN(c.tC), c.tC, p.tC, c.tC, y.tC) +
+    metricCard('Brand impressions', fN(c.bI), c.bI, p.bI, c.bI, y.bI) +
+    metricCard('Non-brand impr.', fN(c.nI), c.nI, p.nI, c.nI, y.nI) +
+    metricCard('Brand share', bsh.toFixed(1)+'%', bsh, bshP, bsh, bshY) +
+    metricCard('Brand clicks', fN(c.bC), c.bC, p.bC, c.bC, y.bC);
+
+  mkChart('br-donut', { type:'doughnut', data:{ labels:['Brand','Non-brand'], datasets:[{ data:[Math.round(c.bI),Math.round(c.nI)], backgroundColor:['#2962A8','#2D7D4F'], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}} }
+  });
+  mkChart('br-bar', { type:'bar', data:{ labels:['Brand','Non-brand'],
+    datasets:[
+      { label:'This week', data:[Math.round(c.bI),Math.round(c.nI)], backgroundColor:['#2962A8cc','#2D7D4Fcc'] },
+      { label:'Prior year', data:[Math.round(y.bI),Math.round(y.nI)], backgroundColor:['#2962A833','#2D7D4F33'] }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}}, scales:{y:{ticks:{callback:v=>fN(v),font:{size:10}}}} }
+  });
+}
+
+/* ════════════════════════════════════════════
+   LOADER MESSAGES
+   ════════════════════════════════════════════ */
+const MSGS = [
+  'Connecting to data sources…',
+  'Fetching GA4 sessions + revenue…',
+  'Loading Mailchimp campaign data…',
+  'Pulling Search Console brand signals…',
+  'Building store comparisons…',
+  'Crunching WoW and YoY deltas…',
+  'Rendering charts…',
+  'Almost ready…'
+];
+let msgIdx = 0;
+function cycleMsg() {
+  if (msgIdx < MSGS.length) {
+    document.getElementById('loader-msg').textContent = MSGS[msgIdx++];
+    setTimeout(cycleMsg, 900);
+  }
+}
+
+/* ════════════════════════════════════════════
+   MAIN — AUTO-RUN ON LOAD
+   ════════════════════════════════════════════ */
+async function init() {
+  cycleMsg();
+  const dates = getWeekDates();
+  const { mon, sun, pwMon, pwSun, pyMon, pySun } = dates;
+
+  document.getElementById('hdr-title').textContent =
+    `Week ending ${sun.toLocaleDateString('en-AU', { day:'2-digit', month:'long', year:'numeric' })}`;
+  document.getElementById('hdr-period').textContent =
+    `Mon ${shortDate(mon)} – Sun ${shortDate(sun)}  ·  PW: ${shortDate(pwMon)}–${shortDate(pwSun)}  ·  PY: ${shortDate(pyMon)}–${shortDate(pySun)}`;
+
+  // Store renders immediately — no API needed
+  renderStore();
+
+  try {
+    const [ga4, mc, sc] = await Promise.all([
+      fetchAll('googleanalytics4', ['date','session_default_channel_group','sessions','transactions','purchase_revenue'], dates, '329225232'),
+      fetchAll('mailchimp', ['date','campaign_title','emails_sent','unique_opens','unique_clicks','unsubscribe_count','bounces'], dates, '1728'),
+      fetchAll('searchconsole', ['date','branded_vs_nonbranded','clicks','impressions'], dates, 'https://focusonfurniture.com.au/'),
+    ]);
+    renderDigital(...ga4);
+    renderCustomer(...mc);
+    renderBrand(...sc);
+    document.getElementById('hdr-status-txt').textContent = 'Live data loaded · ' + new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+  } catch(err) {
+    document.getElementById('global-err').innerHTML =
+      `<div style="padding:10px 14px;background:#FCEAE8;color:#C0392B;border-radius:6px;font-size:12px;margin-bottom:16px">Error loading live data: ${err.message}</div>`;
+    document.getElementById('hdr-status-txt').textContent = 'Error — store data shown, live data failed';
+  }
+
+  // Hide loader, reveal app
+  document.getElementById('loader').style.opacity = '0';
+  document.getElementById('loader').style.pointerEvents = 'none';
+  document.getElementById('app').style.opacity = '1';
+  setTimeout(() => document.getElementById('loader').style.display = 'none', 400);
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
